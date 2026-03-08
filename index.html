@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AutoGarage Pro — Gestion de Véhicules</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --surface2: #1a1a24;
+      --border: #2a2a38;
+      --accent: #ff4d1c;
+      --accent2: #ff8c42;
+      --green: #00e5a0;
+      --yellow: #ffd60a;
+      --blue: #3b82f6;
+      --text: #f0f0f8;
+      --muted: #666680;
+      --card-shadow: 0 4px 24px rgba(0,0,0,0.5);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* BACKGROUND TEXTURE */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: 
+        radial-gradient(ellipse 80% 50% at 10% 0%, rgba(255,77,28,0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 90% 100%, rgba(0,229,160,0.05) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── HEADER ── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(10,10,15,0.92);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.8rem;
+      letter-spacing: 2px;
+      color: var(--text);
+    }
+    .logo span { color: var(--accent); }
+    .header-actions { display: flex; gap: 0.75rem; }
+
+    /* ── MAIN LAYOUT ── */
+    main {
+      position: relative;
+      z-index: 1;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 2rem;
+    }
+
+    /* ── SIDEBAR ── */
+    aside {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .stats-grid {
+      display: grid;
+      gap: 0.75rem;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      border-radius: 3px 0 0 3px;
+    }
+    .stat-card.orange::before { background: var(--accent); }
+    .stat-card.green::before { background: var(--green); }
+    .stat-card.yellow::before { background: var(--yellow); }
+    .stat-card.blue::before { background: var(--blue); }
+    .stat-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .stat-value {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.5rem;
+      line-height: 1;
+      margin-top: 4px;
+    }
+    .stat-card.orange .stat-value { color: var(--accent); }
+    .stat-card.green .stat-value { color: var(--green); }
+    .stat-card.yellow .stat-value { color: var(--yellow); }
+    .stat-card.blue .stat-value { color: var(--blue); }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.65rem 1.25rem;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: all 0.18s ease;
+      white-space: nowrap;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover { background: #ff6a40; transform: translateY(-1px); }
+    .btn-secondary {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { background: var(--border); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid transparent;
+    }
+    .btn-ghost:hover { color: var(--text); border-color: var(--border); }
+    .btn-green { background: var(--green); color: #000; }
+    .btn-green:hover { opacity: 0.85; }
+    .btn-yellow { background: var(--yellow); color: #000; }
+    .btn-yellow:hover { opacity: 0.85; }
+    .btn-danger { background: rgba(255,77,28,0.15); color: var(--accent); border: 1px solid rgba(255,77,28,0.3); }
+    .btn-danger:hover { background: rgba(255,77,28,0.25); }
+    .btn-sm { padding: 0.4rem 0.75rem; font-size: 0.8rem; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+
+    /* ── PANEL ── */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .panel-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .panel-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.25rem;
+      letter-spacing: 1px;
+      color: var(--text);
+    }
+    .panel-body { padding: 1.5rem; }
+
+    /* ── CONTENT AREA ── */
+    .content {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* ── SEARCH & FILTER BAR ── */
+    .toolbar {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .search-box {
+      flex: 1;
+      min-width: 200px;
+      position: relative;
+    }
+    .search-box input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.65rem 0.75rem 0.65rem 2.5rem;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.875rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .search-box input:focus { border-color: var(--accent); }
+    .search-box .icon {
+      position: absolute;
+      left: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+    }
+    select.filter {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.65rem 2rem 0.65rem 0.75rem;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.875rem;
+      outline: none;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23666680' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.75rem center;
+    }
+    select.filter:focus { border-color: var(--accent); }
+
+    /* ── VEHICLE CARDS ── */
+    #vehicles-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1rem;
+    }
+
+    .vehicle-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative;
+    }
+    .vehicle-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    .vehicle-card.departed {
+      opacity: 0.6;
+    }
+    .vehicle-card.departed .card-stripe { background: var(--muted) !important; }
+
+    .card-stripe {
+      height: 4px;
+      width: 100%;
+    }
+    .card-stripe.present { background: linear-gradient(90deg, var(--green), #00b37a); }
+    .card-stripe.repair { background: linear-gradient(90deg, var(--yellow), #e6b800); }
+    .card-stripe.waiting { background: linear-gradient(90deg, var(--blue), #1d6ff5); }
+    .card-stripe.departed { background: var(--muted); }
+
+    .card-inner { padding: 1.25rem; }
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+    .plate {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.1rem;
+      font-weight: 600;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.3rem 0.6rem;
+      letter-spacing: 1px;
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 0.3rem 0.65rem;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge-present { background: rgba(0,229,160,0.12); color: var(--green); border: 1px solid rgba(0,229,160,0.25); }
+    .badge-repair { background: rgba(255,214,10,0.12); color: var(--yellow); border: 1px solid rgba(255,214,10,0.25); }
+    .badge-waiting { background: rgba(59,130,246,0.12); color: var(--blue); border: 1px solid rgba(59,130,246,0.25); }
+    .badge-departed { background: rgba(102,102,128,0.12); color: var(--muted); border: 1px solid rgba(102,102,128,0.25); }
+
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+    .car-name {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+    .car-owner {
+      font-size: 0.825rem;
+      color: var(--muted);
+    }
+
+    .card-details {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+      margin: 1rem 0;
+      padding: 1rem;
+      background: var(--bg);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .detail-item { display: flex; flex-direction: column; gap: 2px; }
+    .detail-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+    }
+    .detail-value {
+      font-size: 0.82rem;
+      font-weight: 500;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    /* ── TIMELINE / LOG ── */
+    .timeline { display: flex; flex-direction: column; gap: 0; }
+    .timeline-item {
+      display: flex;
+      gap: 1rem;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border);
+      animation: fadeIn 0.3s ease;
+    }
+    .timeline-item:last-child { border-bottom: none; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateX(-8px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    .timeline-dot {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .tl-arrival { background: rgba(0,229,160,0.15); }
+    .tl-departure { background: rgba(255,77,28,0.15); }
+    .tl-repair { background: rgba(255,214,10,0.15); }
+    .tl-note { background: rgba(59,130,246,0.15); }
+    .tl-payment { background: rgba(168,85,247,0.15); }
+    .timeline-content { flex: 1; }
+    .tl-title { font-size: 0.875rem; font-weight: 500; }
+    .tl-meta {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .tl-plate {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      background: var(--surface2);
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      animation: fadeOverlay 0.2s ease;
+    }
+    @keyframes fadeOverlay {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 520px;
+      max-height: 90vh;
+      overflow-y: auto;
+      animation: slideUp 0.25s ease;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .modal-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.4rem;
+      letter-spacing: 1px;
+    }
+    .modal-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+    .modal-footer {
+      padding: 1.25rem 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+    }
+
+    /* ── FORM ── */
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+    .form-group label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.65rem 0.75rem;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.875rem;
+      outline: none;
+      transition: border-color 0.15s;
+      width: 100%;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus { border-color: var(--accent); }
+    .form-group textarea { resize: vertical; min-height: 80px; }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--muted);
+    }
+    .empty-state .icon { font-size: 3.5rem; margin-bottom: 1rem; }
+    .empty-state h3 { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--text); margin-bottom: 0.5rem; }
+    .empty-state p { font-size: 0.875rem; }
+
+    /* ── TABS ── */
+    .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); }
+    .tab {
+      padding: 0.75rem 1.25rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+      background: none;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+      font-family: 'DM Sans', sans-serif;
+      margin-bottom: -1px;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* ── NOTIFICATION ── */
+    #notification {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      z-index: 300;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .notif {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.875rem 1.25rem;
+      font-size: 0.875rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      min-width: 260px;
+      animation: slideInRight 0.3s ease, fadeOut 0.3s ease 3.5s forwards;
+      box-shadow: var(--card-shadow);
+    }
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes fadeOut {
+      to { opacity: 0; transform: translateX(20px); }
+    }
+    .notif.success { border-left: 3px solid var(--green); }
+    .notif.warning { border-left: 3px solid var(--yellow); }
+    .notif.error { border-left: 3px solid var(--accent); }
+    .notif.info { border-left: 3px solid var(--blue); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      main { grid-template-columns: 1fr; }
+      aside { display: grid; grid-template-columns: repeat(2, 1fr); }
+      .stats-grid { display: contents; }
+    }
+    @media (max-width: 600px) {
+      main { padding: 1rem; }
+      header { padding: 0 1rem; }
+      aside { grid-template-columns: 1fr 1fr; }
+    }
+
+    .hidden { display: none !important; }
+
+    /* Detail view */
+    .detail-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(6px);
+      z-index: 200;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 2rem 1rem;
+      overflow-y: auto;
+    }
+    .detail-modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 700px;
+      animation: slideUp 0.25s ease;
+    }
+    .vehicle-header-banner {
+      height: 6px;
+      border-radius: 20px 20px 0 0;
+    }
+    .section-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1rem;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+    .checklist { display: flex; flex-direction: column; gap: 0.4rem; }
+    .check-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem 0.75rem;
+      background: var(--bg);
+      border-radius: 6px;
+      font-size: 0.85rem;
+    }
+    .check-item input[type=checkbox] { accent-color: var(--accent); width: 16px; height: 16px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Auto<span>Garage</span> Pro</div>
+  <div class="header-actions">
+    <button class="btn btn-secondary btn-sm" onclick="exportData()">📤 Exporter</button>
+    <button class="btn btn-primary" onclick="openAddModal()">＋ Nouveau véhicule</button>
+  </div>
+</header>
+
+<main>
+  <!-- SIDEBAR -->
+  <aside>
+    <div class="stats-grid">
+      <div class="stat-card orange">
+        <div class="stat-label">Total véhicules</div>
+        <div class="stat-value" id="stat-total">0</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">En garage</div>
+        <div class="stat-value" id="stat-present">0</div>
+      </div>
+      <div class="stat-card yellow">
+        <div class="stat-label">En réparation</div>
+        <div class="stat-value" id="stat-repair">0</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-label">Partis aujourd'hui</div>
+        <div class="stat-value" id="stat-departed">0</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Activité récente</span>
+      </div>
+      <div class="panel-body" style="padding: 0.75rem;">
+        <div class="timeline" id="activity-log">
+          <div class="empty-state" style="padding: 2rem 1rem;">
+            <div class="icon">📋</div>
+            <p>Aucune activité</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- CONTENT -->
+  <div class="content">
+    <div class="toolbar">
+      <div class="search-box">
+        <span class="icon">🔍</span>
+        <input type="text" id="search" placeholder="Rechercher plaque, nom, modèle..." oninput="renderVehicles()">
+      </div>
+      <select class="filter" id="filter-status" onchange="renderVehicles()">
+        <option value="">Tous les statuts</option>
+        <option value="present">En garage</option>
+        <option value="repair">En réparation</option>
+        <option value="waiting">En attente</option>
+        <option value="departed">Parti</option>
+      </select>
+      <select class="filter" id="filter-sort" onchange="renderVehicles()">
+        <option value="date-desc">Plus récent</option>
+        <option value="date-asc">Plus ancien</option>
+        <option value="plate">Plaque</option>
+        <option value="owner">Propriétaire</option>
+      </select>
+    </div>
+
+    <div id="vehicles-grid">
+      <div class="empty-state" style="grid-column: 1/-1;">
+        <div class="icon">🚗</div>
+        <h3>Aucun véhicule</h3>
+        <p>Ajoutez votre premier véhicule pour commencer</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ── NOTIFICATIONS ── -->
+<div id="notification"></div>
+
+<!-- ── ADD/EDIT MODAL ── -->
+<div id="modal" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">Nouveau Véhicule</span>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Plaque d'immatriculation *</label>
+          <input type="text" id="f-plate" placeholder="AB-123-CD" style="font-family: 'JetBrains Mono', monospace; text-transform: uppercase;">
+        </div>
+        <div class="form-group">
+          <label>Statut</label>
+          <select id="f-status">
+            <option value="present">En garage</option>
+            <option value="repair">En réparation</option>
+            <option value="waiting">En attente</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Marque *</label>
+          <input type="text" id="f-brand" placeholder="Renault, Peugeot...">
+        </div>
+        <div class="form-group">
+          <label>Modèle *</label>
+          <input type="text" id="f-model" placeholder="Clio, 308...">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Année</label>
+          <input type="number" id="f-year" placeholder="2020" min="1950" max="2030">
+        </div>
+        <div class="form-group">
+          <label>Kilométrage</label>
+          <input type="number" id="f-km" placeholder="45000">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Propriétaire *</label>
+          <input type="text" id="f-owner" placeholder="Nom complet">
+        </div>
+        <div class="form-group">
+          <label>Téléphone</label>
+          <input type="tel" id="f-phone" placeholder="+229 XX XX XX XX">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Date d'entrée</label>
+          <input type="date" id="f-entry">
+        </div>
+        <div class="form-group">
+          <label>Devis estimé (FCFA)</label>
+          <input type="number" id="f-estimate" placeholder="50000">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Travaux / Description</label>
+        <textarea id="f-work" placeholder="Vidange, freins, révision..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Notes internes</label>
+        <textarea id="f-notes" placeholder="Observations, pièces à commander..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="saveVehicle()" id="save-btn">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── DEPARTURE MODAL ── -->
+<div id="departure-modal" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">🚗 Départ du véhicule</span>
+      <button class="btn btn-ghost btn-sm" onclick="closeDepartureModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="dep-info" style="background: var(--bg); border-radius: 8px; padding: 1rem; margin-bottom: 0.5rem;"></div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Date de départ</label>
+          <input type="date" id="dep-date">
+        </div>
+        <div class="form-group">
+          <label>Heure</label>
+          <input type="time" id="dep-time">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Montant facturé (FCFA)</label>
+          <input type="number" id="dep-amount" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>Mode de paiement</label>
+          <select id="dep-payment">
+            <option value="cash">Espèces</option>
+            <option value="mobile">Mobile Money</option>
+            <option value="card">Carte bancaire</option>
+            <option value="credit">Crédit</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Checklist de départ</label>
+        <div class="checklist" id="dep-checklist">
+          <div class="check-item"><input type="checkbox" id="chk1"><label for="chk1">Travaux terminés et vérifiés</label></div>
+          <div class="check-item"><input type="checkbox" id="chk2"><label for="chk2">Facture remise au client</label></div>
+          <div class="check-item"><input type="checkbox" id="chk3"><label for="chk3">Paiement encaissé</label></div>
+          <div class="check-item"><input type="checkbox" id="chk4"><label for="chk4">Clés remises au propriétaire</label></div>
+          <div class="check-item"><input type="checkbox" id="chk5"><label for="chk5">Signature du bon de sortie</label></div>
+          <div class="check-item"><input type="checkbox" id="chk6"><label for="chk6">Test de conduite effectué</label></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Observations de départ</label>
+        <textarea id="dep-notes" placeholder="État du véhicule, remarques..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeDepartureModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="confirmDeparture()" style="background: var(--accent);">✓ Confirmer le départ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── VEHICLE DETAIL MODAL ── -->
+<div id="detail-overlay" class="detail-overlay hidden">
+  <div class="detail-modal">
+    <div class="vehicle-header-banner" id="detail-banner"></div>
+    <div style="padding: 1.5rem;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+        <div>
+          <div class="plate" id="detail-plate" style="font-size: 1.3rem; display: inline-block; margin-bottom: 0.5rem;"></div>
+          <h2 id="detail-title" style="font-family: 'Bebas Neue'; font-size: 1.8rem; letter-spacing: 1px;"></h2>
+          <div id="detail-owner" style="color: var(--muted);"></div>
+        </div>
+        <button class="btn btn-ghost" onclick="closeDetail()">✕ Fermer</button>
+      </div>
+      <div id="detail-body"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════
+//  DATABASE (localStorage)
+// ══════════════════════════════════
+const DB = {
+  vehicles: () => JSON.parse(localStorage.getItem('garage_vehicles') || '[]'),
+  log: () => JSON.parse(localStorage.getItem('garage_log') || '[]'),
+  save: (key, data) => localStorage.setItem(key, JSON.stringify(data)),
+};
+
+let editingId = null;
+let departingId = null;
+
+// ══════════════════════════════════
+//  INIT
+// ══════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('f-entry').value = today();
+  renderVehicles();
+  renderLog();
+  updateStats();
+  // Demo data if empty
+  if (DB.vehicles().length === 0) loadDemo();
+});
+
+function today() {
+  return new Date().toISOString().split('T')[0];
+}
+function nowTime() {
+  return new Date().toTimeString().slice(0,5);
+}
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+function fmtDateTime(ts) {
+  if (!ts) return '—';
+  return new Date(ts).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+function fmtMoney(v) {
+  if (!v) return '—';
+  return Number(v).toLocaleString('fr-FR') + ' FCFA';
+}
+
+// ══════════════════════════════════
+//  VEHICLE CRUD
+// ══════════════════════════════════
+function openAddModal() {
+  editingId = null;
+  clearForm();
+  document.getElementById('f-entry').value = today();
+  document.getElementById('modal-title').textContent = 'Nouveau Véhicule';
+  document.getElementById('save-btn').textContent = 'Enregistrer';
+  document.getElementById('modal').classList.remove('hidden');
+}
+
+function openEditModal(id) {
+  const v = DB.vehicles().find(x => x.id === id);
+  if (!v) return;
+  editingId = id;
+  document.getElementById('modal-title').textContent = 'Modifier le véhicule';
+  document.getElementById('save-btn').textContent = 'Mettre à jour';
+  document.getElementById('f-plate').value = v.plate || '';
+  document.getElementById('f-status').value = v.status || 'present';
+  document.getElementById('f-brand').value = v.brand || '';
+  document.getElementById('f-model').value = v.model || '';
+  document.getElementById('f-year').value = v.year || '';
+  document.getElementById('f-km').value = v.km || '';
+  document.getElementById('f-owner').value = v.owner || '';
+  document.getElementById('f-phone').value = v.phone || '';
+  document.getElementById('f-entry').value = v.entryDate || today();
+  document.getElementById('f-estimate').value = v.estimate || '';
+  document.getElementById('f-work').value = v.work || '';
+  document.getElementById('f-notes').value = v.notes || '';
+  document.getElementById('modal').classList.remove('hidden');
+}
+
+function clearForm() {
+  ['f-plate','f-brand','f-model','f-year','f-km','f-owner','f-phone','f-entry','f-estimate','f-work','f-notes'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('f-status').value = 'present';
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.add('hidden');
+  editingId = null;
+}
+
+function saveVehicle() {
+  const plate = document.getElementById('f-plate').value.trim().toUpperCase();
+  const brand = document.getElementById('f-brand').value.trim();
+  const model = document.getElementById('f-model').value.trim();
+  const owner = document.getElementById('f-owner').value.trim();
+
+  if (!plate || !brand || !model || !owner) {
+    notify('Remplissez les champs obligatoires (*)','error');
+    return;
+  }
+
+  const vehicles = DB.vehicles();
+
+  if (editingId) {
+    const idx = vehicles.findIndex(x => x.id === editingId);
+    if (idx < 0) return;
+    vehicles[idx] = { ...vehicles[idx], ...getFormData(), updatedAt: Date.now() };
+    DB.save('garage_vehicles', vehicles);
+    addLog('note', `Véhicule modifié`, plate, '✏️');
+    notify('Véhicule mis à jour', 'success');
+  } else {
+    const existing = vehicles.find(x => x.plate === plate && x.status !== 'departed');
+    if (existing) { notify('Cette plaque est déjà enregistrée (en garage)', 'error'); return; }
+    const v = { id: Date.now().toString(), createdAt: Date.now(), ...getFormData() };
+    vehicles.push(v);
+    DB.save('garage_vehicles', vehicles);
+    addLog('arrival', `Entrée au garage`, plate, '🚗');
+    notify('Véhicule ajouté avec succès', 'success');
+  }
+  closeModal();
+  renderVehicles();
+  renderLog();
+  updateStats();
+}
+
+function getFormData() {
+  return {
+    plate: document.getElementById('f-plate').value.trim().toUpperCase(),
+    status: document.getElementById('f-status').value,
+    brand: document.getElementById('f-brand').value.trim(),
+    model: document.getElementById('f-model').value.trim(),
+    year: document.getElementById('f-year').value,
+    km: document.getElementById('f-km').value,
+    owner: document.getElementById('f-owner').value.trim(),
+    phone: document.getElementById('f-phone').value.trim(),
+    entryDate: document.getElementById('f-entry').value,
+    estimate: document.getElementById('f-estimate').value,
+    work: document.getElementById('f-work').value.trim(),
+    notes: document.getElementById('f-notes').value.trim(),
+  };
+}
+
+function deleteVehicle(id) {
+  if (!confirm('Supprimer ce véhicule ?')) return;
+  const vehicles = DB.vehicles().filter(x => x.id !== id);
+  DB.save('garage_vehicles', vehicles);
+  notify('Véhicule supprimé', 'warning');
+  renderVehicles();
+  updateStats();
+}
+
+// ══════════════════════════════════
+//  DEPARTURE
+// ══════════════════════════════════
+function openDepartureModal(id) {
+  departingId = id;
+  const v = DB.vehicles().find(x => x.id === id);
+  if (!v) return;
+  document.getElementById('dep-info').innerHTML = `
+    <div style="display:flex;gap:1rem;align-items:center;">
+      <div>
+        <div class="plate">${v.plate}</div>
+      </div>
+      <div>
+        <div style="font-weight:600;">${v.brand} ${v.model} ${v.year || ''}</div>
+        <div style="color:var(--muted);font-size:0.825rem;">👤 ${v.owner}${v.phone ? ' · 📞 ' + v.phone : ''}</div>
+        ${v.work ? `<div style="font-size:0.8rem;margin-top:4px;color:var(--muted);">🔧 ${v.work}</div>` : ''}
+      </div>
+    </div>
+  `;
+  document.getElementById('dep-date').value = today();
+  document.getElementById('dep-time').value = nowTime();
+  document.getElementById('dep-amount').value = v.estimate || '';
+  document.getElementById('dep-notes').value = '';
+  document.querySelectorAll('#dep-checklist input[type=checkbox]').forEach(c => c.checked = false);
+  document.getElementById('departure-modal').classList.remove('hidden');
+}
+
+function closeDepartureModal() {
+  document.getElementById('departure-modal').classList.add('hidden');
+  departingId = null;
+}
+
+function confirmDeparture() {
+  if (!departingId) return;
+  const vehicles = DB.vehicles();
+  const idx = vehicles.findIndex(x => x.id === departingId);
+  if (idx < 0) return;
+
+  const date = document.getElementById('dep-date').value;
+  const time = document.getElementById('dep-time').value;
+  const amount = document.getElementById('dep-amount').value;
+  const payment = document.getElementById('dep-payment').value;
+  const notes = document.getElementById('dep-notes').value;
+
+  const checks = [];
+  ['chk1','chk2','chk3','chk4','chk5','chk6'].forEach(id => {
+    const el = document.getElementById(id);
+    checks.push({ label: el.nextElementSibling.textContent, checked: el.checked });
+  });
+
+  const departure = { date, time, amount, payment, notes, checks, timestamp: Date.now() };
+  vehicles[idx].status = 'departed';
+  vehicles[idx].departure = departure;
+  vehicles[idx].departedAt = Date.now();
+
+  DB.save('garage_vehicles', vehicles);
+
+  const paymentLabels = { cash: 'Espèces', mobile: 'Mobile Money', card: 'Carte', credit: 'Crédit' };
+  addLog('departure', `Départ confirmé — ${amount ? fmtMoney(amount) : 'Non facturé'} (${paymentLabels[payment]})`, vehicles[idx].plate, '🏁');
+
+  notify(`${vehicles[idx].brand} ${vehicles[idx].model} est parti du garage`, 'info');
+  closeDepartureModal();
+  renderVehicles();
+  renderLog();
+  updateStats();
+}
+
+// ══════════════════════════════════
+//  CHANGE STATUS
+// ══════════════════════════════════
+function changeStatus(id, newStatus) {
+  const vehicles = DB.vehicles();
+  const idx = vehicles.findIndex(x => x.id === id);
+  if (idx < 0) return;
+  vehicles[idx].status = newStatus;
+  vehicles[idx].updatedAt = Date.now();
+  DB.save('garage_vehicles', vehicles);
+
+  const labels = { present: 'En garage', repair: 'En réparation', waiting: 'En attente' };
+  addLog('note', `Statut → ${labels[newStatus]}`, vehicles[idx].plate, '🔄');
+  notify(`Statut mis à jour: ${labels[newStatus]}`, 'success');
+  renderVehicles();
+  renderLog();
+  updateStats();
+}
+
+// ══════════════════════════════════
+//  LOG
+// ══════════════════════════════════
+function addLog(type, text, plate, emoji) {
+  const log = DB.log();
+  log.unshift({ id: Date.now().toString(), type, text, plate, emoji, ts: Date.now() });
+  if (log.length > 100) log.pop();
+  DB.save('garage_log', log);
+}
+
+const typeClass = { arrival: 'tl-arrival', departure: 'tl-departure', repair: 'tl-repair', note: 'tl-note', payment: 'tl-payment' };
+
+function renderLog() {
+  const log = DB.log();
+  const el = document.getElementById('activity-log');
+  if (log.length === 0) {
+    el.innerHTML = `<div class="empty-state" style="padding:1.5rem 1rem;"><div class="icon">📋</div><p>Aucune activité</p></div>`;
+    return;
+  }
+  el.innerHTML = log.slice(0, 20).map(entry => `
+    <div class="timeline-item">
+      <div class="timeline-dot ${typeClass[entry.type] || 'tl-note'}">${entry.emoji}</div>
+      <div class="timeline-content">
+        <div class="tl-title">${entry.text}</div>
+        <div class="tl-meta">
+          <span class="tl-plate">${entry.plate}</span>
+          &nbsp;·&nbsp;${fmtDateTime(entry.ts)}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ══════════════════════════════════
+//  RENDER VEHICLES
+// ══════════════════════════════════
+function renderVehicles() {
+  let vehicles = DB.vehicles();
+  const search = document.getElementById('search').value.toLowerCase();
+  const filterStatus = document.getElementById('filter-status').value;
+  const sortBy = document.getElementById('filter-sort').value;
+
+  if (search) {
+    vehicles = vehicles.filter(v =>
+      v.plate.toLowerCase().includes(search) ||
+      v.owner.toLowerCase().includes(search) ||
+      v.brand.toLowerCase().includes(search) ||
+      v.model.toLowerCase().includes(search)
+    );
+  }
+  if (filterStatus) vehicles = vehicles.filter(v => v.status === filterStatus);
+
+  if (sortBy === 'date-desc') vehicles.sort((a,b) => b.createdAt - a.createdAt);
+  else if (sortBy === 'date-asc') vehicles.sort((a,b) => a.createdAt - b.createdAt);
+  else if (sortBy === 'plate') vehicles.sort((a,b) => a.plate.localeCompare(b.plate));
+  else if (sortBy === 'owner') vehicles.sort((a,b) => a.owner.localeCompare(b.owner));
+
+  const grid = document.getElementById('vehicles-grid');
+
+  if (vehicles.length === 0) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <div class="icon">🔍</div>
+      <h3>Aucun résultat</h3>
+      <p>Modifiez vos filtres ou ajoutez un véhicule</p>
+    </div>`;
+    return;
+  }
+
+  const statusInfo = {
+    present: { label: 'En garage', cls: 'badge-present', stripe: 'present' },
+    repair: { label: 'Réparation', cls: 'badge-repair', stripe: 'repair' },
+    waiting: { label: 'En attente', cls: 'badge-waiting', stripe: 'waiting' },
+    departed: { label: 'Parti', cls: 'badge-departed', stripe: 'departed' }
+  };
+
+  grid.innerHTML = vehicles.map(v => {
+    const s = statusInfo[v.status] || statusInfo.present;
+    const departed = v.status === 'departed';
+    return `
+    <div class="vehicle-card ${departed ? 'departed' : ''}">
+      <div class="card-stripe ${s.stripe}"></div>
+      <div class="card-inner">
+        <div class="card-top">
+          <div class="plate">${v.plate}</div>
+          <span class="status-badge ${s.cls}">
+            <span class="dot"></span>${s.label}
+          </span>
+        </div>
+        <div class="car-name">${v.brand} ${v.model}</div>
+        <div class="car-owner">👤 ${v.owner}${v.phone ? ' &nbsp;·&nbsp; 📞 ' + v.phone : ''}</div>
+
+        <div class="card-details">
+          <div class="detail-item">
+            <span class="detail-label">Entrée</span>
+            <span class="detail-value">${fmtDate(v.entryDate)}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Kilométrage</span>
+            <span class="detail-value">${v.km ? Number(v.km).toLocaleString('fr-FR') + ' km' : '—'}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Devis</span>
+            <span class="detail-value">${v.estimate ? fmtMoney(v.estimate) : '—'}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Année</span>
+            <span class="detail-value">${v.year || '—'}</span>
+          </div>
+        </div>
+
+        ${v.work ? `<div style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem;padding:0.5rem 0.75rem;background:var(--bg);border-radius:6px;">🔧 ${v.work}</div>` : ''}
+
+        <div class="card-actions">
+          <button class="btn btn-secondary btn-sm" onclick="openDetail('${v.id}')">👁 Détails</button>
+          ${!departed ? `
+            <button class="btn btn-secondary btn-sm" onclick="openEditModal('${v.id}')">✏️</button>
+            ${v.status !== 'repair' ? `<button class="btn btn-yellow btn-sm" onclick="changeStatus('${v.id}','repair')">🔧 Réparation</button>` : ''}
+            ${v.status !== 'present' ? `<button class="btn btn-green btn-sm" onclick="changeStatus('${v.id}','present')">✅ Garage</button>` : ''}
+            <button class="btn btn-primary btn-sm" onclick="openDepartureModal('${v.id}')">🚗 Départ</button>
+          ` : `
+            <span style="font-size:0.78rem;color:var(--muted);">Sorti le ${v.departure ? fmtDate(v.departure.date) : '—'}</span>
+          `}
+          <button class="btn btn-danger btn-sm" onclick="deleteVehicle('${v.id}')">🗑</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════
+//  DETAIL VIEW
+// ══════════════════════════════════
+function openDetail(id) {
+  const v = DB.vehicles().find(x => x.id === id);
+  if (!v) return;
+  const stripeColors = { present: 'linear-gradient(90deg,#00e5a0,#00b37a)', repair: 'linear-gradient(90deg,#ffd60a,#e6b800)', waiting: 'linear-gradient(90deg,#3b82f6,#1d6ff5)', departed: '#666680' };
+  document.getElementById('detail-banner').style.background = stripeColors[v.status] || stripeColors.present;
+  document.getElementById('detail-plate').textContent = v.plate;
+  document.getElementById('detail-title').textContent = `${v.brand} ${v.model} ${v.year || ''}`;
+  document.getElementById('detail-owner').innerHTML = `👤 ${v.owner}${v.phone ? ' &nbsp;·&nbsp; 📞 ' + v.phone : ''}`;
+
+  let html = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">`;
+  const fields = [
+    ['Plaque', v.plate], ['Statut', {present:'En garage',repair:'En réparation',waiting:'En attente',departed:'Parti'}[v.status]],
+    ['Marque', v.brand], ['Modèle', v.model],
+    ['Année', v.year], ['Kilométrage', v.km ? Number(v.km).toLocaleString('fr-FR') + ' km' : null],
+    ['Entrée', fmtDate(v.entryDate)], ['Devis', v.estimate ? fmtMoney(v.estimate) : null],
+  ];
+  fields.forEach(([label, val]) => {
+    html += `<div class="detail-item"><span class="detail-label">${label}</span><span class="detail-value">${val || '—'}</span></div>`;
+  });
+  html += `</div>`;
+
+  if (v.work) html += `<div style="margin-bottom:1rem;"><div class="section-title">Travaux</div><div style="background:var(--bg);border-radius:8px;padding:1rem;font-size:0.875rem;">${v.work}</div></div>`;
+  if (v.notes) html += `<div style="margin-bottom:1rem;"><div class="section-title">Notes internes</div><div style="background:var(--bg);border-radius:8px;padding:1rem;font-size:0.875rem;color:var(--muted);">${v.notes}</div></div>`;
+
+  if (v.status === 'departed' && v.departure) {
+    const dep = v.departure;
+    const payLabels = { cash: '💵 Espèces', mobile: '📱 Mobile Money', card: '💳 Carte', credit: '📝 Crédit' };
+    html += `<div style="margin-bottom:1rem;"><div class="section-title">Informations de départ</div>
+    <div style="background:rgba(255,77,28,0.07);border:1px solid rgba(255,77,28,0.2);border-radius:8px;padding:1rem;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
+        <div class="detail-item"><span class="detail-label">Date départ</span><span class="detail-value">${fmtDate(dep.date)} ${dep.time || ''}</span></div>
+        <div class="detail-item"><span class="detail-label">Montant</span><span class="detail-value" style="color:var(--green)">${dep.amount ? fmtMoney(dep.amount) : '—'}</span></div>
+        <div class="detail-item"><span class="detail-label">Paiement</span><span class="detail-value">${payLabels[dep.payment] || dep.payment}</span></div>
+      </div>
+      ${dep.notes ? `<div style="font-size:0.825rem;color:var(--muted)">${dep.notes}</div>` : ''}
+      ${dep.checks ? `<div style="margin-top:0.75rem;display:flex;flex-wrap:wrap;gap:0.4rem;">${dep.checks.map(c => `<span style="font-size:0.72rem;padding:2px 8px;border-radius:20px;background:${c.checked?'rgba(0,229,160,0.12)':'rgba(102,102,128,0.1)'};color:${c.checked?'var(--green)':'var(--muted)'};">${c.checked?'✓':'✗'} ${c.label}</span>`).join('')}</div>` : ''}
+    </div></div>`;
+  }
+
+  document.getElementById('detail-body').innerHTML = html;
+  document.getElementById('detail-overlay').classList.remove('hidden');
+}
+
+function closeDetail() {
+  document.getElementById('detail-overlay').classList.add('hidden');
+}
+
+// ══════════════════════════════════
+//  STATS
+// ══════════════════════════════════
+function updateStats() {
+  const vehicles = DB.vehicles();
+  const todayStr = today();
+  document.getElementById('stat-total').textContent = vehicles.length;
+  document.getElementById('stat-present').textContent = vehicles.filter(v => v.status === 'present').length;
+  document.getElementById('stat-repair').textContent = vehicles.filter(v => v.status === 'repair').length;
+  document.getElementById('stat-departed').textContent = vehicles.filter(v => v.status === 'departed' && v.departure?.date === todayStr).length;
+}
+
+// ══════════════════════════════════
+//  EXPORT
+// ══════════════════════════════════
+function exportData() {
+  const data = { vehicles: DB.vehicles(), log: DB.log(), exportedAt: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `garage-backup-${today()}.json`;
+  a.click();
+  notify('Données exportées avec succès', 'success');
+}
+
+// ══════════════════════════════════
+//  NOTIFY
+// ══════════════════════════════════
+function notify(msg, type = 'info') {
+  const icons = { success: '✅', warning: '⚠️', error: '❌', info: 'ℹ️' };
+  const el = document.createElement('div');
+  el.className = `notif ${type}`;
+  el.innerHTML = `<span>${icons[type]}</span><span>${msg}</span>`;
+  document.getElementById('notification').appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+// ══════════════════════════════════
+//  DEMO DATA
+// ══════════════════════════════════
+function loadDemo() {
+  const demos = [
+    { id:'d1', createdAt: Date.now()-86400000*3, plate:'TG-1234-A', status:'repair', brand:'Toyota', model:'Corolla', year:'2019', km:'87000', owner:'Kofi Mensah', phone:'+228 90 12 34 56', entryDate:'2026-03-05', estimate:'75000', work:'Remplacement plaquettes de frein + vidange moteur', notes:'Pièces commandées' },
+    { id:'d2', createdAt: Date.now()-86400000*1, plate:'TG-5678-B', status:'present', brand:'Honda', model:'Civic', year:'2021', km:'34500', owner:'Ama Koffi', phone:'+228 91 23 45 67', entryDate:'2026-03-07', estimate:'25000', work:'Révision générale 30 000 km', notes:'' },
+    { id:'d3', createdAt: Date.now()-86400000*5, plate:'TG-9012-C', status:'departed', brand:'Renault', model:'Logan', year:'2017', km:'112000', owner:'Yao Agbodossou', phone:'+228 92 34 56 78', entryDate:'2026-03-01', estimate:'45000', work:'Changement courroie de distribution', notes:'Véhicule récupéré', departure:{ date:'2026-03-06', time:'15:30', amount:'45000', payment:'cash', notes:'Client satisfait', checks:[{label:'Travaux terminés',checked:true},{label:'Facture remise',checked:true},{label:'Paiement encaissé',checked:true},{label:'Clés remises',checked:true},{label:'Bon de sortie signé',checked:true},{label:'Test conduite',checked:false}] }, departedAt: Date.now()-86400000*2 },
+  ];
+  DB.save('garage_vehicles', demos);
+  DB.save('garage_log', [
+    { id:'l1', type:'departure', text:'Départ confirmé — 45 000 FCFA (Espèces)', plate:'TG-9012-C', emoji:'🏁', ts: Date.now()-86400000*2 },
+    { id:'l2', type:'arrival', text:'Entrée au garage', plate:'TG-5678-B', emoji:'🚗', ts: Date.now()-86400000*1 },
+    { id:'l3', type:'repair', text:'Statut → En réparation', plate:'TG-1234-A', emoji:'🔄', ts: Date.now()-86400000*3 },
+    { id:'l4', type:'arrival', text:'Entrée au garage', plate:'TG-1234-A', emoji:'🚗', ts: Date.now()-86400000*3.1 },
+    { id:'l5', type:'arrival', text:'Entrée au garage', plate:'TG-9012-C', emoji:'🚗', ts: Date.now()-86400000*5 },
+  ]);
+  renderVehicles();
+  renderLog();
+  updateStats();
+}
+
+// Close modals on overlay click
+document.getElementById('modal').addEventListener('click', e => { if(e.target === e.currentTarget) closeModal(); });
+document.getElementById('departure-modal').addEventListener('click', e => { if(e.target === e.currentTarget) closeDepartureModal(); });
+document.getElementById('detail-overlay').addEventListener('click', e => { if(e.target === e.currentTarget) closeDetail(); });
+</script>
+</body>
+</html>
